@@ -1,4 +1,4 @@
-# Hi there, I'm kx3ez1 👋
+# Hi there, I'm Bharath Reddy 👋
 
 Systems & Full-Stack Developer passionate about low-level C networking, database engines, AI tooling, and high-performance web applications.
 
