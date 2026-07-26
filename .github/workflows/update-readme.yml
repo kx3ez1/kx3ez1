@@ -2,8 +2,8 @@ name: Update README with Repos
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Runs automatically every day at midnight
-  workflow_dispatch: # Allows you to run it manually
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
   update-readme:
@@ -29,17 +29,22 @@ jobs:
         import os
 
         username = os.getenv('GH_USERNAME')
-        # FIXED: Corrected the endpoint URL format below
         response = requests.get(f'https://github.com{username}/repos?per_page=100')
         repos = response.json()
 
-        # Sort repositories by star count (highest first)
-        repos = sorted([r for r in repos if not r['fork']], key=lambda x: x['stargazers_count'], reverse=True)
+        if isinstance(repos, dict) and 'message' in repos:
+            print('API Error:', repos['message'])
+            exit(1)
+
+        repos = sorted([r for r in repos if not r.get('fork', False)], key=lambda x: x.get('stargazers_count', 0), reverse=True)
 
         readme_content = f'# Hi there! 👋\n\n## 📊 My Public Repositories\n\n'
         for repo in repos:
-            desc = repo['description'] if repo['description'] else 'No description provided.'
-            readme_content += f'- **[{repo[\"name\"]}]({repo[\"html_url\"]})** - ⭐ {repo[\"stargazers_count\"]} | {desc}\n'
+            name = repo.get('name', 'Unnamed')
+            url = repo.get('html_url', '#')
+            stars = repo.get('stargazers_count', 0)
+            desc = repo.get('description') if repo.get('description') else 'No description provided.'
+            readme_content += f'- **[{name}]({url})** - ⭐ {stars} | {desc}\n'
 
         with open('README.md', 'w', encoding='utf-8') as f:
             f.write(readme_content)
@@ -48,7 +53,7 @@ jobs:
     - name: Commit and Push Changes
       run: |
         git config --global user.name "github-actions[bot]"
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --global user.email "41898282+github-actions[bot]@://github.com"
         git add README.md
         git diff-index --quiet HEAD || git commit -m "Automated README update with latest repos"
         git push
