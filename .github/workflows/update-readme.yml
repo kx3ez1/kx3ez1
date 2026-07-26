@@ -1,0 +1,53 @@
+name: Update README with Repos
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs automatically every day at midnight
+  workflow_dispatch: # Allows you to run it manually
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-state: '3.10'
+
+    - name: Install Dependencies
+      run: pip install requests
+
+    - name: Generate Repo List
+      env:
+        GH_USERNAME: ${{ github.repository_owner }}
+      run: |
+        python -c "
+        import requests
+        import os
+
+        username = os.getenv('GH_USERNAME')
+        response = requests.get(f'https://github.com{username}/repos?per_page=100')
+        repos = response.json()
+
+        # Sort repositories by star count (highest first)
+        repos = sorted([r for r in repos if not r['fork']], key=lambda x: x['stargazers_count'], reverse=True)
+
+        readme_content = f'# Hi there! 👋\n\n## 📊 My Public Repositories\n\n'
+        for repo in repos:
+            desc = repo['description'] if repo['description'] else 'No description provided.'
+            readme_content += f'- **[{repo['name']}]({repo['html_url']})** - ⭐ {repo['stargazers_count']} | {desc}\n'
+
+        with open('README.md', 'w', encoding='utf-8') as f:
+            f.write(readme_content)
+        "
+
+    - name: Commit and Push Changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add README.md
+        git diff-index --quiet HEAD || git commit -m "Automated README update with latest repos"
+        git push
