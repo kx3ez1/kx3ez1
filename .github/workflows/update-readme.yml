@@ -23,40 +23,69 @@ jobs:
     - name: Install Dependencies
       run: pip install requests
 
-    - name: Generate Repo List
+    - name: Update README Section
       env:
         GH_USERNAME: ${{ github.repository_owner }}
       run: |
         python -c "
         import requests
         import os
+        import re
 
         username = os.getenv('GH_USERNAME')
-        response = requests.get(f'https://api.github.com/users/{username}/repos?per_page=100')
+        headers = {'Accept': 'application/vnd.github.v3+json'}
+        url = f'https://api.github.com/users/{username}/repos?per_page=100&type=owner'
+        
+        response = requests.get(url, headers=headers)
         repos = response.json()
 
         if isinstance(repos, dict) and 'message' in repos:
             print('API Error:', repos['message'])
             exit(1)
 
-        repos = sorted([r for r in repos if not r.get('fork', False)], key=lambda x: x.get('stargazers_count', 0), reverse=True)
+        # Filter out forks & sort alphabetically by repository name
+        repos = sorted([r for r in repos if not r.get('fork', False)], key=lambda x: x.get('name', '').lower())
 
-        readme_content = f'# Hi there! 👋\n\n## 📊 My Public Repositories\n\n'
+        lines = [
+            '### 📌 Public Repositories',
+            '',
+            '| Repository | Description | Primary Language |',
+            '| :--- | :--- | :--- |'
+        ]
+
         for repo in repos:
-            name = repo.get('name', 'Unnamed')
-            url = repo.get('html_url', '#')
-            stars = repo.get('stargazers_count', 0)
-            desc = repo.get('description') if repo.get('description') else 'No description provided.'
-            readme_content += f'- **[{name}]({url})** - ⭐ {stars} | {desc}\n'
+            name = repo.get('name', '')
+            html_url = repo.get('html_url', '#')
+            desc = (repo.get('description') or 'No description provided.').replace('|', '\\|')
+            lang = repo.get('language') or 'N/A'
+            lines.append(f'| [**{name}**]({html_url}) | {desc} | `{lang}` |')
 
-        with open('README.md', 'w', encoding='utf-8') as f:
-            f.write(readme_content)
+        repo_table = '\n'.join(lines)
+
+        start_tag = '<!-- REPOS-LIST:START -->'
+        end_tag = '<!-- REPOS-LIST:END -->'
+
+        readme_file = 'README.md'
+        if not os.path.exists(readme_file):
+            readme_file = 'PROFILE_README.md'
+
+        with open(readme_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        if start_tag in content and end_tag in content:
+            pattern = re.compile(f'{re.escape(start_tag)}.*?{re.escape(end_tag)}', re.DOTALL)
+            new_content = pattern.sub(f'{start_tag}\n{repo_table}\n{end_tag}', content)
+        else:
+            new_content = content + f'\n\n{start_tag}\n{repo_table}\n{end_tag}\n'
+
+        with open(readme_file, 'w', encoding='utf-8') as f:
+            f.write(new_content)
         "
 
     - name: Commit and Push Changes
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add README.md
-        git diff-index --quiet HEAD || git commit -m "Automated README update with latest repos"
+        git add README.md PROFILE_README.md 2>/dev/null || git add .
+        git diff-index --quiet HEAD || git commit -m "chore: automated update of repository table"
         git push
