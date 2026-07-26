@@ -58,6 +58,4 @@ Systems & Full-Stack Developer passionate about low-level C networking, database
 <p align="center">
   <img src="https://github-readme-streak-stats.herokuapp.com/?user=kx3ez1&theme=dark" alt="kx3ez1 streak" />
 </p>
-<p align="center">
-  <img src="https://github-readme-activity-graph.vercel.app/graph?username=kx3ez1&theme=react-dark" alt="kx3ez1 activity graph" />
-</p>
+
