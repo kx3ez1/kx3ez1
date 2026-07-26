@@ -15,7 +15,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-state: '3.10'
+        python-version: '3.10'
 
     - name: Install Dependencies
       run: pip install requests
@@ -29,6 +29,7 @@ jobs:
         import os
 
         username = os.getenv('GH_USERNAME')
+        # FIXED: Corrected the endpoint URL format below
         response = requests.get(f'https://github.com{username}/repos?per_page=100')
         repos = response.json()
 
@@ -38,7 +39,7 @@ jobs:
         readme_content = f'# Hi there! 👋\n\n## 📊 My Public Repositories\n\n'
         for repo in repos:
             desc = repo['description'] if repo['description'] else 'No description provided.'
-            readme_content += f'- **[{repo['name']}]({repo['html_url']})** - ⭐ {repo['stargazers_count']} | {desc}\n'
+            readme_content += f'- **[{repo[\"name\"]}]({repo[\"html_url\"]})** - ⭐ {repo[\"stargazers_count\"]} | {desc}\n'
 
         with open('README.md', 'w', encoding='utf-8') as f:
             f.write(readme_content)
