@@ -95,10 +95,3 @@ schema and a preferences UI.
 ---
 
 ## 📊 GitHub Activity
-
-<p align="center">
-  <img src="https://streak-stats.demolab.com?user=kx3ez1&theme=dark&hide_border=true" alt="kx3ez1 GitHub streak" />
-</p>
-<p align="center">
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=kx3ez1&layout=compact&theme=dark&hide_border=true&langs_count=8" alt="kx3ez1 top languages" />
-</p>
